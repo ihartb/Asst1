@@ -43,30 +43,27 @@ int testCD(int isRandByte) {
 	char* arrayP[120];
 	int mallocIndex = 0;
 	int freeIndex = 0; 	
-	int mallocs = 0;
-	int frees = 0;
 	int byteSize = 1;
 
 	//loop until malloc'd 120x and free'd 120x
-	while (mallocs < 120 || frees < 120) {
+	while (mallocIndex < 120 || freeIndex < 120) {
 		//mOrF chooses between malloc or free
 		//and for part D also decides number of blocks to malloc
-		int mOrF = rand() % 32;
+		int mOrF = rand();
 		//if mOrF is odd and we have not malloc'd 120x, perform malloc
-		if (mOrF % 2 && mallocs < 120) {
+		if (mOrF % 2 && mallocIndex < 120) {
 			//if part D, mOrF is byteSize to malloc
-			if (isRandByte) { byteSize = mOrF; }
+			if (isRandByte) { byteSize = mOrF % 32; }
 			arrayP[mallocIndex] = (char*) malloc(byteSize);
 			//if malloc returned NULL, do not increase times malloc'd
 			if (arrayP[mallocIndex] != NULL) {
-				++mallocs;
 				++mallocIndex;
 			}
 		}
 		//if mOrF is even and we have something to free: perform free
-		else if (freeIndex < mallocIndex && mallocs != 0) {
+		else if (freeIndex < mallocIndex && mallocIndex != 0) {
 			free(arrayP[freeIndex]);
-			++frees;
+			arrayP[freeIndex] = NULL;
 			++freeIndex;
 		}
 	}
@@ -83,23 +80,20 @@ int testE() {
 	gettimeofday(&start, 0);
 	char* arrayP1[75];
 	char* arrayP2[75];
-	int frees = 0;
+	
 	//malloc 75 50byte blocks
 	for (int i =0; i < 75; i++) {
 		arrayP1[i]= (char*)malloc(50);
 		arrayP2[i] = NULL;
 	}
 
-	//randomly find blocks to free and split them in 2 different malloc'd blocks
-	while (frees < 75) {
-		int i = rand() % 75;
-		if (arrayP2[i] == NULL) {
-			frees++;
-			free(arrayP1[i]);
-			arrayP1[i] = (char*) malloc(25);
-			arrayP2[i] = (char*) malloc(23); 
-		}
+	//free each 50 byte block and split them in 2 different malloc'd blocks
+	for (int i =0; i < 75; i++) {
+		free(arrayP1[i]);
+		arrayP1[i] = (char*) malloc(24);
+		arrayP2[i] = (char*) malloc(24); 
 	}
+	
 	//free all the blocks
 	for (int i = 0; i < 75; i++) {
 		free(arrayP1[i]);

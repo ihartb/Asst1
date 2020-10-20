@@ -1,0 +1,13 @@
+Workload D:
+
+This workload randomly chooses to malloc or free, each is done 120 times. For mallocs, the workload randomly chooses between 0 to 32 bytes to malloc().
+
+By randomly choosing amount to be malloc'd, we load test whether the algorithm can handle a more realistic situation where individuals can request any number of bytes, and free or malloc in any order they choose. A scenario like this might be more likely to bring about issues of memory fragmentation if free'd pointer's are not consolidated with adjacent free'd blocks. 
+
+Workload E:
+
+This workload first malloc's 50byte chunks 75 times, for a total of 3900 bytes (as each 50 byte chunk also needs 2 bytes of metadata). 
+
+The workload then randomly chooses a block to free and then splits it in half. The first half of this block is malloc'd with 24 bytes, and the second half is also malloc'd with 24 bytes. This makes a total of 50 bytes, as the first half does not require any additional metadata, it simply rewrites the metadata of the original 50 byte block. The second half however, requires 2 bytes of metadata. In short, the original 50 bytes get split into 2 halves: 1st half = 24 bytes, 2nd half = 26 bytes = 2 bytes metadata + 24 bytes user data.
+
+This test case checks the edge case where we have EXACTLY enough space to fit the amount being requested. After malloc(24) for the first half, we have exactly 26 bytes leftover. As a result, when we request malloc(24) again, we have EXACTLY ehough space for that block and its metadata, and the request should be fulfilled without any issues. The code does not produce any error's when doing so, so the request is fulfilled.
