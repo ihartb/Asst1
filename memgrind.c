@@ -78,26 +78,24 @@ int testCD(int isRandByte) {
 //free all mallocs
 int testE() {
 	gettimeofday(&start, 0);
-	char* arrayP1[75];
-	char* arrayP2[75];
+	char* arrayP1[150];
 	
 	//malloc 75 50byte blocks
 	for (int i =0; i < 75; i++) {
 		arrayP1[i]= (char*)malloc(50);
-		arrayP2[i] = NULL;
 	}
 
 	//free each 50 byte block and split them in 2 different malloc'd blocks
 	for (int i =0; i < 75; i++) {
 		free(arrayP1[i]);
 		arrayP1[i] = (char*) malloc(24);
-		arrayP2[i] = (char*) malloc(24); 
+		arrayP1[i+75] = (char*) malloc(24); 
 	}
 	
 	//free all the blocks
 	for (int i = 0; i < 75; i++) {
 		free(arrayP1[i]);
-		free(arrayP2[i]);
+		free(arrayP1[i+75]);
 	}
 	gettimeofday(&stop, 0);
 	return (( stop.tv_sec-start.tv_sec)*1000000 + stop.tv_usec-start.tv_usec);

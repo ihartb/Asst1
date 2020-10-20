@@ -3,8 +3,6 @@
 #include "mymalloc.h"
 
 static char myblock[MEMSIZE];
-static int firstMalloc = 1;
-
 
 //user blocks are occupied (malloc'd) if the
 //left most bit of 16 bit of the metadata block is 1,
@@ -28,8 +26,8 @@ unsigned short blockSize(metadata* curr) {
 //followed by 0 for free or any other integer for occupied
 //followed by the size of user data
 void printMemory() {
-	int index = 0;
-	metadata* curr = (metadata*) myblock;
+	int index = sizeof(metadata);
+	metadata* curr = (metadata*) (myblock+sizeof(metadata));
 	printf("---------------------------------------\n");
 	while (index < MEMSIZE) {
 		unsigned short currSize = blockSize(curr);
@@ -70,23 +68,30 @@ void writeOccupiedSize(metadata* curr, unsigned short currSize, size_t newSize) 
 	curr -> size = (newSize & 0x7fff) | 0x8000;
 }
 
+//initializes myblock with metadata to tell us how much free space we have
+void firstMalloc() {
+	metadata* first=(metadata*)myblock;
+  	first -> size =12144;//first two bytes (short) are  dedicated to storing the status of myblock
+  	writeFreeSize( (metadata*) (first+1), MEMSIZE - 2*sizeof(metadata));
+	return;
+}
 //returns to the user a pointer to the amount of memory requested
 void* mymalloc(size_t size, char* file, int line){
 	//if the user asks for 0 bytes, call error and return NULL
-	if (size == 0){
-		errorMessage("Cannot malloc 0 bytes", file, line);
+	if (size <= 0){
+		errorMessage("Cannot malloc 0 or negative bytes", file, line);
 		return NULL;
 	}
 
-	metadata* curr = (metadata*) myblock;
 	//if this is the first malloc, create a metdata block at start to represent all the memory as free
-	if (firstMalloc) {
-		firstMalloc = 0;
-		writeFreeSize(curr, MEMSIZE-sizeof(metadata));
+	metadata* first=(metadata*)myblock;
+	if (first->size != 12144) {
+		firstMalloc();
 	}
 
 	unsigned short currSize = 0;
-	int index = 0;
+	metadata* curr =  (first+1);
+	int index = sizeof(metadata);
 	//traverse memory to find the first free block that can fit the size requested
 	while (index < MEMSIZE) {
 		currSize = blockSize(curr);
@@ -127,17 +132,18 @@ void myfree(void* p, char* file, int line) {
 		errorMessage("Can't free null pointer!", file, line);
 		return;
 	}
-	int currIndex = 0;
-
+	
+	int currIndex = sizeof(metadata);
 	//if nothing has been malloc'd yet, cannot free!
-	if (firstMalloc) {
+	metadata* first=(metadata*)myblock;
+	if (first->size != 12144) {
 		currIndex = MEMSIZE;
 	}
 
 	metadata* prev;
 	int prevFree = 0;
 	unsigned short prevSize = 0;
-	metadata* curr = (metadata*) myblock;
+	metadata* curr = (metadata*) (first+1);
 	//find the pointer to be free and keep track of the previous block incase it is free so we can combine them and avoid memory fragmentation
 	while (currIndex < MEMSIZE) {
 		unsigned short currSize = blockSize(curr);
